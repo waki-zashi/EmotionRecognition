@@ -8,6 +8,23 @@ import (
 	protocol "github.com/maksimkasimovhse/httpPractice"
 )
 
+func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		
+		token := r.Header.Get("X-Auth-Token")
+
+		if token != "secret" {
+			fmt.Println("Пользователь без пароля пытается отправить данные")
+			w.WriteHeader(http.StatusForbidden)
+			fmt.Fprint(w, "Доступ запрещен: неверный или пустой токен")
+			return
+		}
+		
+		next(w, r)
+	}
+
+}
+
 func myHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
@@ -35,7 +52,7 @@ func myHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/hello", myHandler)
+	http.HandleFunc("/hello", authMiddleware(myHandler))
 	fmt.Println("Сервер ждет запроса на порту: 8080...")
 
 	http.ListenAndServe(":8080", nil)
