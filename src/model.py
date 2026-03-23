@@ -7,6 +7,9 @@ class EmotionModel(nn.Module):
 
         self.model = models.resnet18(pretrained=True)
 
+        for param in self.model.parameters():
+            param.requires_grad = True
+
         in_features = self.model.fc.in_features
         self.model.fc = nn.Linear(in_features, num_classes)
 
