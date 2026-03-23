@@ -33,8 +33,6 @@ func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 
 func myHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
-	case http.MethodGet:
-		fmt.Fprint(w, "Вы хотите получить данные по запросу (GET)")
 	case http.MethodPost:
 
 		r.ParseMultipartForm(5 << 20)
@@ -87,12 +85,38 @@ func myHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func statusHandler(w http.ResponseWriter, r *http.Request) {
+	taskID := r.URL.Query().Get("id")
+	if taskID == "" {
+		http.Error(w, "параметр ID не дошел", http.StatusBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+
+	val, err := rdb.Get(ctx, "result:"+taskID).Result()
+
+	if err == redis.Nil {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprintf(w, `{"task_id": "%s", "status": "processing"}`, taskID)
+		return
+	} else if err != nil {
+		http.Error(w, "Ошибка Redis", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	fmt.Fprint(w, val)
+
+}
+
 func main() {
 	rdb = redis.NewClient(&redis.Options{
 		Addr: "localhost:6379",
 	})
 	http.HandleFunc("/hello", authMiddleware(myHandler))
-	fmt.Println("Сервер ждет запроса на порту: 8080...")
+	http.HandleFunc("/status", statusHandler)
 
+	fmt.Println("Сервер ждет запроса на порту: 8080...")
 	http.ListenAndServe(":8080", nil)
 }
