@@ -1,11 +1,8 @@
 package protocol
 
-type UserRequest struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
-type UserResponse struct {
-	Message string `json:"message"`
-	Status  string `json:"status"`
+type ImageTask struct {
+	TaskID    string `json:"task_id"`
+	UserID    int    `json:"user_id"`
+	FileName  string `json:"file_name"`
+	ImageData string `json:"image_data"`
 }

@@ -1,16 +1,22 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
+	"github.com/google/uuid"
 	protocol "github.com/maksimkasimovhse/httpPractice"
+	"github.com/redis/go-redis/v9"
 )
+
+var rdb *redis.Client
 
 func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		
+
 		token := r.Header.Get("X-Auth-Token")
 
 		if token != "secret" {
@@ -19,7 +25,7 @@ func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			fmt.Fprint(w, "Доступ запрещен: неверный или пустой токен")
 			return
 		}
-		
+
 		next(w, r)
 	}
 
@@ -30,21 +36,51 @@ func myHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		fmt.Fprint(w, "Вы хотите получить данные по запросу (GET)")
 	case http.MethodPost:
-		var NewMessage protocol.UserRequest
-		err := json.NewDecoder(r.Body).Decode(&NewMessage)
+
+		r.ParseMultipartForm(5 << 20)
+
+		file, header, err := r.FormFile("image")
 		if err != nil {
-			fmt.Printf("Ошибка декодирования: %v", err)
+			http.Error(w, "Ошибка получения файла", http.StatusBadRequest)
 			return
 		}
-		fmt.Printf("Имя пользователя: %s, ID: %s\n", NewMessage.Name, NewMessage.ID)
+		defer file.Close()
 
-		ServerResponse := protocol.UserResponse{Message: fmt.Sprintf("Привет, %s! Твой ID %s успешно обработан", NewMessage.Name, NewMessage.ID), Status: "Успешно"}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		err = json.NewEncoder(w).Encode(ServerResponse)
+		fmt.Printf("Пришел файл с параметрами:\n Размер: %d, Название: %s", header.Size, header.Filename)
+
+		fileBytes, err := io.ReadAll(file)
 		if err != nil {
-			fmt.Printf("Ошибка отправки: %v", err)
+			http.Error(w, "Ошибка чтения файла", http.StatusInternalServerError)
+			return
 		}
+
+		ctx := r.Context()
+		taskID := uuid.New().String()
+
+		imageData64 := base64.StdEncoding.EncodeToString(fileBytes)
+
+		task := protocol.ImageTask{
+			TaskID:    taskID,
+			UserID:    101,
+			FileName:  header.Filename,
+			ImageData: imageData64,
+		}
+
+		taskJSON, err := json.Marshal(task)
+		if err != nil {
+			http.Error(w, "Ошибка маршалинга JSON", http.StatusInternalServerError)
+			return
+		}
+
+		err = rdb.LPush(ctx, "image_tasks", taskJSON).Err()
+		if err != nil {
+			fmt.Printf("Ошибка Redis: %v\n", err)
+			http.Error(w, "Ошибка записи в очередь", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprintf(w, `{"status": "accepted", "task_id": "%s"}`, taskID)
 
 	default:
 		fmt.Fprint(w, "Такой метод не поддерживается")
@@ -52,6 +88,9 @@ func myHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	rdb = redis.NewClient(&redis.Options{
+		Addr: "localhost:6379",
+	})
 	http.HandleFunc("/hello", authMiddleware(myHandler))
 	fmt.Println("Сервер ждет запроса на порту: 8080...")
 
