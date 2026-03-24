@@ -23,7 +23,7 @@ r.lpush("image_tasks", json.dumps(task))
 print("Task sent")
 
 while True:
-    result = r.get(f"result: {task_id}")
+    result = r.get(f"result:{task_id}")
 
     if result:
         print("Result:", result)
