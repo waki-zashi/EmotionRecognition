@@ -78,6 +78,7 @@ func myHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusAccepted)
 		fmt.Fprintf(w, `{"status": "accepted", "task_id": "%s"}`, taskID)
 
 	default:
@@ -107,15 +108,29 @@ func statusHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprint(w, val)
+}
 
+func corsMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-Auth-Token")
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		next(w, r)
+	}
 }
 
 func main() {
 	rdb = redis.NewClient(&redis.Options{
 		Addr: "localhost:6379",
 	})
-	http.HandleFunc("/hello", authMiddleware(myHandler))
-	http.HandleFunc("/status", statusHandler)
+
+	http.HandleFunc("/hello", corsMiddleware(authMiddleware(myHandler)))
+	http.HandleFunc("/status", corsMiddleware(statusHandler))
 
 	fmt.Println("Сервер ждет запроса на порту: 8080...")
 	http.ListenAndServe(":8080", nil)
