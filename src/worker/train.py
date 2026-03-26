@@ -6,11 +6,11 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from sklearn.metrics import classification_report
 
-from src.dataset import get_dataloaders
-from src.model import EmotionModel
-from src.utils import plot_confusion_matrix
+from src.worker.dataset import get_dataloaders
+from src.worker.model import EmotionModel
+from src.worker.utils import plot_confusion_matrix
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def train():

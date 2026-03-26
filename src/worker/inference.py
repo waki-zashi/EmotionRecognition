@@ -3,9 +3,9 @@ import torch
 from PIL import Image
 from torchvision import transforms
 
-from src.model import EmotionModel
+from src.worker.model import EmotionModel
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 class_names = ['angry', 'disgust', 'fear', 'happy', 'sad', 'surprise', 'neutral']
 
