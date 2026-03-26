@@ -1,0 +1,28 @@
+services:
+  worker:
+    build: ./src/worker
+    environment:
+      - REDIS_HOST=redis
+    volumes:
+    - ./outputs:/app/outputs
+    depends_on:
+      - redis
+    restart: always
+  backend:
+    build: ./src/backend
+    ports:
+      - "8080:8080"
+    environment:
+      - REDIS_ADDR=redis:6379
+    depends_on:
+      - redis
+    restart: always
+  frontend:
+    build: ./src/frontend
+    ports:
+      - "80:80"
+    restart: always
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
