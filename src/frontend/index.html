@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Загрузка файла на Go Backend</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f4f4f9;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .upload-section {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        input[type="file"] {
+            padding: 10px;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        #statusDisplay {
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 4px;
+            min-height: 20px;
+            margin-bottom: 20px;
+            word-wrap: break-word;
+        }
+        #resultImage {
+            max-width: 100%;
+            border-radius: 4px;
+            display: none; /* Скрыто по умолчанию */
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Загрузка картинки</h2>
+    
+    <div class="upload-section">
+        <input type="file" id="fileInput" accept="image/*">
+        <button id="uploadBtn">Отправить на сервер</button>
+    </div>
+
+    <div id="statusDisplay">Статус: Ожидание действий...</div>
+    
+    <img id="resultImage" alt="Результат с сервера" />
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const statusDisplay = document.getElementById('statusDisplay');
+        const resultImage = document.getElementById('resultImage');
+
+        // URL твоего бэкенда
+        const API_URL = 'http://localhost:8080';
+        const AUTH_TOKEN = 'secret'; // Тот самый кастомный заголовок
+
+        uploadBtn.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                statusDisplay.innerText = "❌ Пожалуйста, выберите файл!";
+                return;
+            }
+
+            // 1. Упаковываем файл в FormData
+            const formData = new FormData();
+            formData.append('image', file);
+
+            try {
+                // Блокируем кнопку на время отправки
+                uploadBtn.disabled = true;
+                statusDisplay.innerText = "⏳ Отправка файла на сервер...";
+
+                // 2. Отправляем POST запрос
+                const response = await fetch(`${API_URL}/hello`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Auth-Token': AUTH_TOKEN
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Ошибка сервера: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const taskId = data.task_id;
+                
+                statusDisplay.innerText = `✅ Файл принят! ID задачи: ${taskId}. Ждем результат из Redis...`;
+
+                // 3. Запускаем опрос (Polling) статуса
+                pollStatus(taskId);
+
+            } catch (error) {
+                statusDisplay.innerText = `❌ Ошибка: ${error.message}`;
+                uploadBtn.disabled = false;
+            }
+        });
+
+        // Функция для регулярного опроса бэкенда
+        function pollStatus(taskId) {
+            // Запускаем интервал, который срабатывает каждые 2 секунды (2000 мс)
+            const intervalId = setInterval(async () => {
+                try {
+                    const response = await fetch(`${API_URL}/status?id=${taskId}`);
+                    const data = await response.json();
+
+                    if (data.status === "processing") {
+                        statusDisplay.innerText = `🔄 Обработка... (ID: ${taskId})`;
+                    } else {
+                        // Если статус НЕ processing, значит данные пришли!
+                        // ...
+                        clearInterval(intervalId); 
+
+                        // Читаем поле answer, которое прислал Python-воркер!
+                        // (Если Go-сервер меняет регистр букв, возможно тут будет data.Answer)
+                        statusDisplay.innerText = `🎉 Готово! Распознанная эмоция: ${data.answer}`;
+
+                        uploadBtn.disabled = false;
+                        // ...
+                    }
+                } catch (error) {
+                    clearInterval(intervalId);
+                    statusDisplay.innerText = `❌ Ошибка при проверке статуса: ${error.message}`;
+                    uploadBtn.disabled = false;
+                }
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
