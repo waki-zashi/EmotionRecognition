@@ -1,0 +1,32 @@
+2026-03-27 01:13:03,426 - INFO - Training started
+2026-03-27 01:13:03,427 - INFO - Device: cpu
+2026-03-27 01:14:23,769 - INFO - Class weights: [1.0266046524047852, 9.40661907196045, 1.001046061515808, 0.5684387683868408, 0.8260394334793091, 0.849127471446991, 1.2933729887008667]
+2026-03-27 01:46:54,191 - INFO - Epoch 1/10 | Loss: 1.8336 | Train Acc: 40.67% | Test Acc: 40.08% | LR: 0.001
+2026-03-27 02:18:30,005 - INFO - Epoch 2/10 | Loss: 1.7418 | Train Acc: 38.54% | Test Acc: 37.77% | LR: 0.001
+2026-03-27 02:50:18,334 - INFO - Epoch 3/10 | Loss: 1.7186 | Train Acc: 35.90% | Test Acc: 35.80% | LR: 0.001
+2026-03-27 03:21:49,892 - INFO - Epoch 4/10 | Loss: 1.6998 | Train Acc: 40.57% | Test Acc: 39.68% | LR: 0.0003
+2026-03-27 03:53:18,015 - INFO - Unfreezing layer4 for fine-tuning
+2026-03-27 03:53:18,015 - INFO - Epoch 5/10 | Loss: 1.6620 | Train Acc: 39.79% | Test Acc: 39.19% | LR: 0.0001
+2026-03-27 04:30:50,039 - INFO - Epoch 6/10 | Loss: 1.5034 | Train Acc: 56.67% | Test Acc: 53.41% | LR: 0.0001
+2026-03-27 05:09:58,221 - INFO - Epoch 7/10 | Loss: 1.2782 | Train Acc: 62.13% | Test Acc: 56.31% | LR: 0.0001
+2026-03-27 05:49:11,477 - INFO - Epoch 8/10 | Loss: 1.1473 | Train Acc: 66.27% | Test Acc: 58.99% | LR: 0.0001
+2026-03-27 06:27:52,651 - INFO - Epoch 9/10 | Loss: 1.0330 | Train Acc: 69.78% | Test Acc: 60.14% | LR: 0.0001
+2026-03-27 07:06:26,595 - INFO - Epoch 10/10 | Loss: 0.9184 | Train Acc: 75.82% | Test Acc: 61.58% | LR: 0.0001
+2026-03-27 07:06:26,595 - INFO - Starting final evaluation
+2026-03-27 08:50:59,608 - INFO - 
+              precision    recall  f1-score   support
+
+           0       0.50      0.58      0.54       958
+           1       0.51      0.60      0.55       111
+           2       0.51      0.33      0.40      1024
+           3       0.86      0.82      0.84      1774
+           4       0.54      0.65      0.59      1233
+           5       0.51      0.47      0.49      1247
+           6       0.71      0.81      0.76       831
+
+    accuracy                           0.62      7178
+   macro avg       0.59      0.61      0.60      7178
+weighted avg       0.62      0.62      0.62      7178
+
+2026-03-27 08:51:06,874 - INFO - Model saved to C:\Users\xxeeg\PycharmProjects\emotions\outputs\models\emotion_model.pth
+2026-03-27 08:51:06,875 - INFO - Training finished successfully
